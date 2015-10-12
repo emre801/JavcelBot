@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Random;
 
 import javax.swing.JTextPane;
+import javax.swing.text.BadLocationException;
 
 import org.jibble.pircbot.IrcException;
 import org.jibble.pircbot.NickAlreadyInUseException;
@@ -65,7 +66,7 @@ public class DarcelBot extends PircBot {
     	return nameToColor.get(name);
     }
     
-    public static void writeChannelStuff(String sender, String message){
+    public static void writeChannelStuff(String sender, String message) throws BadLocationException{
     	Calendar now = Calendar.getInstance();
     	MainGUI.appendToPane(DarcelBot.chatBox,now.get(Calendar.HOUR) +":" + now.get(Calendar.MINUTE)+ " ", Color.GRAY);
     	//MainGUI.appendToPane(DarcelBot.chatBox,sender +": ",retrieveColor(sender));
@@ -78,7 +79,12 @@ public class DarcelBot extends PircBot {
     protected void onMessage(String channel, String sender, String login, String hostname, String message){
     	if(chatBox != null){
     		//chatBox.append("<"+sender + ">: " + message +"\n");
-    		writeChannelStuff(sender,message);
+    		try {
+				writeChannelStuff(sender,message);
+			} catch (BadLocationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
             //System.out.println(chatBox.getLineCount());
             /*
             if(chatBox.getLineCount() > 50){
@@ -99,7 +105,12 @@ public class DarcelBot extends PircBot {
     	}
     	try {
     		if(readCommands)
-    			commands.readMessage(message, sender, this, channel);
+				try {
+					commands.readMessage(message, sender, this, channel);
+				} catch (BadLocationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

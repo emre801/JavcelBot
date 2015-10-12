@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Queue;
 
+import javax.swing.text.BadLocationException;
+
 import com.johnerdo.bot.DarcelBot;
 import com.johnerdo.bot.MainGUI;
 import com.johnerdo.pokemonInfo.Pokemon;
@@ -166,7 +168,7 @@ public class Commands {
 		return pokemon.getName()+ " " + pokemon.getAttack()+ "/" + pokemon.getDefense()+ "/" + pokemon.getSpAttack()+ "/" + pokemon.getSpDefense()+ "/" + pokemon.getSpeed();
 	}
 	
-	public void readMessage(String message, String sender, DarcelBot bot, String channel) throws IOException{
+	public void readMessage(String message, String sender, DarcelBot bot, String channel) throws IOException, BadLocationException{
 		if(message.equals("null"))
 			return;
 		sender = sender.toLowerCase();

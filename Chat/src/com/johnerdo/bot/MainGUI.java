@@ -3,13 +3,21 @@ package com.johnerdo.bot;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -21,10 +29,13 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
 import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
 
 public class MainGUI {
 
@@ -37,6 +48,7 @@ public class MainGUI {
     JTextField  usernameChooser;
     JFrame      preFrame;
     static DarcelBot bot;
+    static boolean greenBackground = false;
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -87,7 +99,7 @@ public class MainGUI {
         mainPanel.setLayout(new BorderLayout());
 
         JPanel southPanel = new JPanel();
-        southPanel.setBackground(Color.BLUE);
+        //southPanel.setBackground(Color.BLUE);
         southPanel.setLayout(new GridBagLayout());
 
         messageBox = new JTextField(30);
@@ -97,6 +109,8 @@ public class MainGUI {
         sendMessage.addActionListener(new sendMessageButtonListener());
 
         chatBox = new JTextPane ();
+        if(greenBackground)
+        	chatBox.setBackground(Color.GREEN);
         chatBox.setEditable(true);
         chatBox.setFont(new Font("Serif", Font.PLAIN, 12));
         EmptyBorder eb = new EmptyBorder(new Insets(10, 10, 10, 10));
@@ -132,20 +146,88 @@ public class MainGUI {
         newFrame.getRootPane().setDefaultButton(sendMessage);
     }
 
-    public static void appendToPane(JTextPane tp, String msg, Color c)
+    public static void appendToPane(JTextPane tp, String msg, Color c) throws BadLocationException
     {
+    	//addIcronToJTexPane(tp);
         StyleContext sc = StyleContext.getDefaultStyleContext();
         AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, c);
 
         aset = sc.addAttribute(aset, StyleConstants.FontFamily, "Lucida Console");
         aset = sc.addAttribute(aset, StyleConstants.Alignment, StyleConstants.ALIGN_JUSTIFIED);
-
+        
         int len = tp.getDocument().getLength();
         tp.setCaretPosition(len);
         tp.setCharacterAttributes(aset, false);
         tp.replaceSelection(msg);
+        
+        //Run emoticon iteration 
+        String discription = "kappa";
+		String imgURL = "http://slangit.com/images/shortcuts/twitch/admins/kappa.png";
+        addIcronToJTexPane(tp, sc, discription, imgURL);
+    }
+    
+    
+    public static void addIcronToJTexPane(JTextPane tp, StyleContext sc, String discription, String imgURL) throws BadLocationException{
+
+		StyledDocument doc = tp.getStyledDocument();
+		Icon icon = null;
+		try {
+			icon = createImageIcon(imgURL, discription);
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		String msg = doc.getText(0, doc.getLength());
+		int start =0;
+		int i=msg.indexOf(discription);
+		while(i>=0) {
+            final SimpleAttributeSet attrs=new SimpleAttributeSet(
+               doc.getCharacterElement(start+i).getAttributes());
+            if (StyleConstants.getIcon(attrs)==null) {
+                StyleConstants.setIcon(attrs, icon);
+                doc.remove(start+i, discription.length());
+                doc.insertString(start+i,discription, attrs);
+            }
+            i=msg.indexOf(discription, i+discription.length());
+        }
     }
 
+    /** Returns an ImageIcon, or null if the path was invalid. 
+     * @throws MalformedURLException */
+    protected static ImageIcon createImageIcon(String path,
+                                               String description) throws MalformedURLException {
+        java.net.URL imgURL = new URL(path);
+        if (imgURL != null) {
+            return new ImageIcon(imgURL, description);
+        } else {
+            System.err.println("Couldn't find file: " + path);
+            return null;
+        }
+    }
+    
+    static ImageIcon createImage() {
+        BufferedImage res=new BufferedImage(17, 17, BufferedImage.TYPE_INT_ARGB);
+        Graphics g=res.getGraphics();
+        ((Graphics2D)g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setColor(Color.yellow);
+        g.fillOval(0,0,16,16);
+ 
+        g.setColor(Color.black);
+        g.drawOval(0,0,16,16);
+ 
+        g.drawLine(4,5, 6,5);
+        g.drawLine(4,6, 6,6);
+ 
+        g.drawLine(11,5, 9,5);
+        g.drawLine(11,6, 9,6);
+ 
+        g.drawLine(4,10, 8,12);
+        g.drawLine(8,12, 12,10);
+        g.dispose();
+ 
+        return new ImageIcon(res);
+    }
     
     class sendMessageButtonListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
@@ -158,7 +240,12 @@ public class MainGUI {
                 //chatBox.append("<DarcelBot>:  " + messageBox.getText()
                 //        + "\n");
             	//appendToPane(chatBox,"<DarcelBot>:  " + messageBox.getText() +"\n",Color.red);
-            	DarcelBot.writeChannelStuff("darcelBot",messageBox.getText());
+            	try {
+					DarcelBot.writeChannelStuff("darcelBot",messageBox.getText());
+				} catch (BadLocationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
                 bot.sendMessage("#"+channel, messageBox.getText());
                 messageBox.setText("");
                 
@@ -179,8 +266,8 @@ public class MainGUI {
                 preFrame.setVisible(false);
                 display();
                 try {
-                	appName += ":" +channel; 
-                			
+                	appName += ": " +channel; 
+                	newFrame.setTitle(appName);	
                 	bot = new DarcelBot("#"+channel, chatBox);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
