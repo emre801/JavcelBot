@@ -1,12 +1,14 @@
 package com.johnerdo.commands;
 
+import java.awt.Color;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Queue;
 
 import com.johnerdo.bot.DarcelBot;
+import com.johnerdo.bot.MainGUI;
+import com.johnerdo.pokemonInfo.Pokemon;
 
 public class Commands {
 	public HashMap<String, String> basicCommands, friendCodes, inGameNames;
@@ -152,10 +154,17 @@ public class Commands {
 				response += counter  +".) " + value + " ";
 			}
 			return response;
+		} else if("pk".equalsIgnoreCase(words[0])){
+			String response = pokemonInfo(words[1]);
+			return response;
 		} 
 		return null;
 	}
 	
+	public String pokemonInfo(String pokeLookUp){
+		Pokemon pokemon = new Pokemon(pokeLookUp);
+		return pokemon.getName()+ " " + pokemon.getAttack()+ "/" + pokemon.getDefense()+ "/" + pokemon.getSpAttack()+ "/" + pokemon.getSpDefense()+ "/" + pokemon.getSpeed();
+	}
 	
 	public void readMessage(String message, String sender, DarcelBot bot, String channel) throws IOException{
 		if(message.equals("null"))
@@ -164,8 +173,13 @@ public class Commands {
 		String[] messages = message.split("!");
 		for(String m:messages){
 			String response = this.executeMessage(m,sender);
-			if(response!=null)
+			if(response!=null){
+				if(DarcelBot.chatBox != null){
+					//DarcelBot.chatBox.append(response);
+					MainGUI.appendToPane(DarcelBot.chatBox,response+"\n",DarcelBot.retrieveColor("darcelbot"));
+				}
 				bot.sendMessage(channel, response);
+			}
 		}
 		
 	}

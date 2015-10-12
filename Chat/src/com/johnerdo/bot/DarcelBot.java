@@ -1,6 +1,12 @@
 package com.johnerdo.bot;
 
+import java.awt.Color;
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Random;
+
+import javax.swing.JTextPane;
 
 import org.jibble.pircbot.IrcException;
 import org.jibble.pircbot.NickAlreadyInUseException;
@@ -13,8 +19,10 @@ import com.johnerdo.commands.Commands;
 public class DarcelBot extends PircBot {
 	public Commands commands;
 	String channel;
-	
-	public DarcelBot(String channel) throws IOException{
+	public static JTextPane  chatBox;
+	public static boolean readCommands = false;
+	public DarcelBot(String channel, JTextPane  chatBox) throws IOException{
+		this.chatBox = chatBox;
 		this.channel = channel;
 		this.commands = new Commands();
         this.setVerbose(true);
@@ -30,11 +38,11 @@ public class DarcelBot extends PircBot {
             System.err.println("Server did not accept connection");
             e.printStackTrace();
         }
-        this.sendMessage(channel, "Connected woot");
+        //this.sendMessage(channel, "Connected woot");
 	}
 
     public static void main(String[] args) throws Exception {
-    	DarcelBot bot = new DarcelBot("#emre801");
+    	DarcelBot bot = new DarcelBot("#emre801", null);
     }
 
     @Override
@@ -43,14 +51,55 @@ public class DarcelBot extends PircBot {
         joinChannel(channel);
         super.onConnect();
     }
+    
+    public static HashMap<String,Color> nameToColor = new HashMap<String,Color>();
+    public static Color retrieveColor(String name){
+    	if(!nameToColor.containsKey(name)){
+    		Random rand = new Random();
+    		float r = rand.nextFloat();
+    		float g = rand.nextFloat();
+    		float b = rand.nextFloat();
+    		Color randomColor = new Color(r, g, b);
+    		nameToColor.put(name, randomColor);
+    	}
+    	return nameToColor.get(name);
+    }
+    
+    public static void writeChannelStuff(String sender, String message){
+    	Calendar now = Calendar.getInstance();
+    	MainGUI.appendToPane(DarcelBot.chatBox,now.get(Calendar.HOUR) +":" + now.get(Calendar.MINUTE)+ " ", Color.GRAY);
+    	//MainGUI.appendToPane(DarcelBot.chatBox,sender +": ",retrieveColor(sender));
+		MainGUI.appendToPane(DarcelBot.chatBox,sender,retrieveColor(sender));
+		MainGUI.appendToPane(DarcelBot.chatBox,": " +message+"\n",Color.black);
+    }
+    
+    
     @Override
     protected void onMessage(String channel, String sender, String login, String hostname, String message){
+    	if(chatBox != null){
+    		//chatBox.append("<"+sender + ">: " + message +"\n");
+    		writeChannelStuff(sender,message);
+            //System.out.println(chatBox.getLineCount());
+            /*
+            if(chatBox.getLineCount() > 50){
+            	int end;
+				try {
+					end = chatBox.getLineEndOffset(0);
+					chatBox.replaceRange("", 0, end);
+				} catch (BadLocationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} */
+            	
+            //}
+    	}
     	if("!quit".equals(message)){
     		this.disconnect();
     		System.exit(1);
     	}
     	try {
-			commands.readMessage(message, sender, this, channel);
+    		if(readCommands)
+    			commands.readMessage(message, sender, this, channel);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
