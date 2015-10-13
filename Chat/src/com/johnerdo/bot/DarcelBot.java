@@ -19,9 +19,10 @@ import com.johnerdo.commands.Commands;
 
 public class DarcelBot extends PircBot {
 	public Commands commands;
-	String channel;
+	public String channel;
 	public static JTextPane  chatBox;
 	public static boolean readCommands = false;
+	public static GetInfo getInfo = new GetInfo();
 	public DarcelBot(String channel, JTextPane  chatBox) throws IOException{
 		this.chatBox = chatBox;
 		this.channel = channel;
@@ -69,14 +70,28 @@ public class DarcelBot extends PircBot {
     public static void writeChannelStuff(String sender, String message) throws BadLocationException{
     	Calendar now = Calendar.getInstance();
     	MainGUI.appendToPane(DarcelBot.chatBox,now.get(Calendar.HOUR) +":" + now.get(Calendar.MINUTE)+ " ", Color.GRAY);
+    	if(isSenderMod(sender))
+    		MainGUI.appendToPane(DarcelBot.chatBox,"!----!", Color.GRAY);
     	//MainGUI.appendToPane(DarcelBot.chatBox,sender +": ",retrieveColor(sender));
 		MainGUI.appendToPane(DarcelBot.chatBox,sender,retrieveColor(sender));
 		MainGUI.appendToPane(DarcelBot.chatBox,": " +message+"\n",Color.black);
+		MainGUI.counter++;
     }
     
     
+    public static boolean isSenderMod(String sender){
+    	return GetInfo.moderators.contains(sender.toLowerCase());
+    }
+    
+    
+    public void updateInfo(){
+    	getInfo.getInfo(channel);
+    }
+    
     @Override
     protected void onMessage(String channel, String sender, String login, String hostname, String message){
+    	if(!(GetInfo.viewers.contains(sender.toLowerCase()) || GetInfo.moderators.contains(sender.toLowerCase())) )
+    		updateInfo();
     	if(chatBox != null){
     		//chatBox.append("<"+sender + ">: " + message +"\n");
     		try {
@@ -85,21 +100,8 @@ public class DarcelBot extends PircBot {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-            //System.out.println(chatBox.getLineCount());
-            /*
-            if(chatBox.getLineCount() > 50){
-            	int end;
-				try {
-					end = chatBox.getLineEndOffset(0);
-					chatBox.replaceRange("", 0, end);
-				} catch (BadLocationException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} */
-            	
-            //}
     	}
-    	if("!quit".equals(message)){
+    	if("!quit".equals(message) && GetInfo.moderators.contains(sender.toLowerCase())){
     		this.disconnect();
     		System.exit(1);
     	}

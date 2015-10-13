@@ -9,6 +9,7 @@ import java.util.Queue;
 import javax.swing.text.BadLocationException;
 
 import com.johnerdo.bot.DarcelBot;
+import com.johnerdo.bot.GetInfo;
 import com.johnerdo.bot.MainGUI;
 import com.johnerdo.pokemonInfo.Pokemon;
 
@@ -127,7 +128,7 @@ public class Commands {
 		return "@"+sender+ " : " + ign;
 	}
 	
-	public String executeMessage(String m, String sender) throws IOException{
+	public String executeMessage(String m, String sender, DarcelBot bot) throws IOException{
 		String[] words = m.split(" ");
 		if(basicCommands.containsKey(words[0]) && words.length == 1 ){
 			return basicCommands.get(words[0]);
@@ -146,7 +147,7 @@ public class Commands {
 			String response = this.removePersonFromLine(sender);
 			ReadFilesForSetup.writeLine("line.txt", line);
 			return response;
-		}else if("next".equalsIgnoreCase(words[0])){
+		}else if("next".equalsIgnoreCase(words[0]) && GetInfo.moderators.contains(sender.toLowerCase())){
 			String response = this.nextInLine();
 			return response;
 		} else if("line".equalsIgnoreCase(words[0])){
@@ -159,8 +160,14 @@ public class Commands {
 		} else if("pk".equalsIgnoreCase(words[0])){
 			String response = pokemonInfo(words[1]);
 			return response;
-		} 
+		} else if("mUpdate".equalsIgnoreCase(words[0]) && (GetInfo.moderators.contains(sender.toLowerCase()) || bot.channel.equals(sender)) ){
+			updateModList(bot);
+		}
 		return null;
+	}
+	
+	public static void updateModList(DarcelBot bot){
+		new GetInfo().getInfo(bot.channel);
 	}
 	
 	public String pokemonInfo(String pokeLookUp){
@@ -174,11 +181,12 @@ public class Commands {
 		sender = sender.toLowerCase();
 		String[] messages = message.split("!");
 		for(String m:messages){
-			String response = this.executeMessage(m,sender);
+			String response = this.executeMessage(m,sender, bot);
 			if(response!=null){
 				if(DarcelBot.chatBox != null){
 					//DarcelBot.chatBox.append(response);
-					MainGUI.appendToPane(DarcelBot.chatBox,response+"\n",DarcelBot.retrieveColor("darcelbot"));
+					DarcelBot.writeChannelStuff("DarcelBot", response);
+					//MainGUI.appendToPane(DarcelBot.chatBox,response+"\n",DarcelBot.retrieveColor("darcelbot"));
 				}
 				bot.sendMessage(channel, response);
 			}

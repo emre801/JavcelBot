@@ -15,6 +15,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -32,10 +33,11 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
 import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
+
+import com.johnerdo.commands.ImageIconURL;
 
 public class MainGUI {
 
@@ -69,7 +71,7 @@ public class MainGUI {
         newFrame.setVisible(false);
         preFrame = new JFrame(appName);
         usernameChooser = new JTextField(15);
-        JLabel chooseUsernameLabel = new JLabel("Pick a username:");
+        JLabel chooseUsernameLabel = new JLabel("Pick a channel to join:");
         JButton enterServer = new JButton("Enter Chat Server");
         preFrame.getRootPane().setDefaultButton(enterServer);
         enterServer.addActionListener(new enterServerButtonListener());
@@ -95,6 +97,7 @@ public class MainGUI {
     }
 
     public void display() {
+    	ImageIconURL.setupImgToUrlMapping();
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BorderLayout());
 
@@ -146,24 +149,33 @@ public class MainGUI {
         newFrame.getRootPane().setDefaultButton(sendMessage);
     }
 
+    static Color color1 = Color.GRAY;
+    static Color color2 = Color.white;
+    static int counter=0;
+    
     public static void appendToPane(JTextPane tp, String msg, Color c) throws BadLocationException
     {
     	//addIcronToJTexPane(tp);
         StyleContext sc = StyleContext.getDefaultStyleContext();
         AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, c);
-
+        /*if(counter%2==0)
+        	aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Background, color1);
+        else
+        	aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Background, color2);*/
+        
         aset = sc.addAttribute(aset, StyleConstants.FontFamily, "Lucida Console");
         aset = sc.addAttribute(aset, StyleConstants.Alignment, StyleConstants.ALIGN_JUSTIFIED);
+        
         
         int len = tp.getDocument().getLength();
         tp.setCaretPosition(len);
         tp.setCharacterAttributes(aset, false);
         tp.replaceSelection(msg);
+        //tp.setBackground(Color.GREEN);
         
         //Run emoticon iteration 
-        String discription = "kappa";
-		String imgURL = "http://slangit.com/images/shortcuts/twitch/admins/kappa.png";
-        addIcronToJTexPane(tp, sc, discription, imgURL);
+        for(String discription: ImageIconURL.imgToURLMapping.keySet())
+        	addIcronToJTexPane(tp, sc, discription, ImageIconURL.imgToURLMapping.get(discription));
     }
     
     
@@ -192,6 +204,7 @@ public class MainGUI {
             i=msg.indexOf(discription, i+discription.length());
         }
     }
+    static HashMap<String, ImageIcon> iconCache = new HashMap<String, ImageIcon>();
 
     /** Returns an ImageIcon, or null if the path was invalid. 
      * @throws MalformedURLException */
@@ -199,7 +212,9 @@ public class MainGUI {
                                                String description) throws MalformedURLException {
         java.net.URL imgURL = new URL(path);
         if (imgURL != null) {
-            return new ImageIcon(imgURL, description);
+        	if(!iconCache.containsKey(path))
+        		iconCache.put(path, new ImageIcon(imgURL, description));
+            return iconCache.get(path);
         } else {
             System.err.println("Couldn't find file: " + path);
             return null;
